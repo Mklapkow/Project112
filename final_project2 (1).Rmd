@@ -122,59 +122,6 @@ NY_wifi <- read.csv("https://data.ny.gov/api/views/sjc6-ftj4/rows.csv?accessType
 CountyNY_wifi <- NY_wifi %>% filter(Municipality.Type == "County")
 ```
 
-```{r}
-cablevcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Cable), y=Percent_Cable, fill=Percent_Rural_Pop)) +
-  geom_col(alpha=1, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Cable vs. County Name", x="County Name (NY)", y="% of Households With Cable")
-
-ggplotly(cablevcounty)
-
-
-```
-
-
->This visualization displays the percentage of households with cable per county in New York state. Metro counties generally have a higher percentage of households with cable (as illustrated by the left end of the x-axis) when compared to rural counties (shown on the right side of the x-axis)
-
-```{r}
-DSLvcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_DSL), y=Percent_DSL, fill=Percent_Rural_Pop)) +
-  geom_col(alpha=.8, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With DSL vs. County Name", x="County Name (NY)", y="% of Households With DSL")
-
-ggplotly(DSLvcounty)
-```
-
-
->This visualization illustrates the percentage of households per county that have DSL in New York state. This chart shows the same trend as the previous, the metro county households have a tendency to have more access to DSL than households in rural counties.
-
-```{r}
-Fibervcounty<- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Fiber), y=Percent_Fiber, fill=Percent_Rural_Pop)) +
-  geom_col(alpha=1, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Fiber vs. County Name", x="County Name (NY)", y="% of Households With Fiber")
-
-ggplotly(Fibervcounty)
-```
-
-
->This visualization depicts the percentage of households in New York state counties with access to fiber, a super speed internet service offered by providers in select locations. Fiber is limited almost exclusively to metro counties in New York state.
-
-```{r}
-Wirelinevcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Wireline), y=Percent_Wireline, fill=Percent_Rural_Pop)) +
-  geom_col(alpha=1, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Wireline vs. County Name", x="County Name (NY)", y="% of Households With Wireline")
-
-ggplotly(Wirelinevcounty)
-```
-
-
->This visualization shows the percentage of households per county in New York state that have Wireline access (DSL, Cable, or Fiber). The results across the board, from metro to rural, are fairly similar; but the percentage in rural counties is slightly lower.
- 
-
-```{r}
-Wirelessvcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Wireless), y=Percent_Wireless, fill=Percent_Rural_Pop)) +
-  geom_col(alpha=.8, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Wireless vs. County Name", x="County Name (NY)", y="% of Households With Wireless")
-
-ggplotly(Wirelessvcounty)
-```
-
-
->This visualization shows the percentage of households per county in New York state that have access to Wireless services provided through the use of satellites. The results in both metro and rural counties are fairly homogeneous.
-
 ##Housing Units with Wireline  
 ```{r, cache=TRUE}
 library(maps)
@@ -289,6 +236,11 @@ ny_county_type<-ny_county_type%>% mutate(region=fips, value=type)
 county_choropleth(ny_county_type, state_zoom="new york") + scale_fill_manual(values = rev(brewer.pal(3,"RdBu"))) + ggtitle("Urban vs. Rural New York Metro Counties")
 ```
 
+
+
+
+>This map distinguishes between counties in New York that are a part of the New York City metro area and those that are defined as rural.
+
 ```{r}
 NY_census_rural<- read_csv("county_rural.csv")
 
@@ -296,7 +248,7 @@ NY_census_rural<- NY_census_rural %>%
   filter(State == "NY") %>%
   select(-Note)
 
-NewNYCounty<- CountyNY_wifi6 %>% 
+NewNYCounty<- CountyNY_wifi %>% 
   left_join(NY_census_rural, by=c("X2010.Muni.Population"="2010 Census Total Population"))
 
 Total_NY_Wifi<- NewNYCounty %>%
@@ -335,8 +287,58 @@ colnames(Trimmed_NY_Wifi)[28] <- "Percent_Rural_Pop"
 Total_NY_Wifi <- Trimmed_NY_Wifi
 ```
 
+```{r}
+cablevcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Cable), y=Percent_Cable, fill=Percent_Rural_Pop)) +
+  geom_col(alpha=1, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Cable vs. County Name", x="County Name (NY)", y="% of Households With Cable")
 
->This map distinguishes between counties in New York that are a part of the New York City metro area and those that are defined as rural.
+ggplotly(cablevcounty)
+
+
+```
+
+
+>This visualization displays the percentage of households with cable per county in New York state. Metro counties generally have a higher percentage of households with cable (as illustrated by the left end of the x-axis) when compared to rural counties (shown on the right side of the x-axis)
+
+```{r}
+DSLvcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_DSL), y=Percent_DSL, fill=Percent_Rural_Pop)) +
+  geom_col(alpha=.8, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With DSL vs. County Name", x="County Name (NY)", y="% of Households With DSL")
+
+ggplotly(DSLvcounty)
+```
+
+
+>This visualization illustrates the percentage of households per county that have DSL in New York state. This chart shows the same trend as the previous, the metro county households have a tendency to have more access to DSL than households in rural counties.
+
+```{r}
+Fibervcounty<- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Fiber), y=Percent_Fiber, fill=Percent_Rural_Pop)) +
+  geom_col(alpha=1, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Fiber vs. County Name", x="County Name (NY)", y="% of Households With Fiber")
+
+ggplotly(Fibervcounty)
+```
+
+
+>This visualization depicts the percentage of households in New York state counties with access to fiber, a super speed internet service offered by providers in select locations. Fiber is limited almost exclusively to metro counties in New York state.
+
+```{r}
+Wirelinevcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Wireline), y=Percent_Wireline, fill=Percent_Rural_Pop)) +
+  geom_col(alpha=1, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Wireline vs. County Name", x="County Name (NY)", y="% of Households With Wireline")
+
+ggplotly(Wirelinevcounty)
+```
+
+
+>This visualization shows the percentage of households per county in New York state that have Wireline access (DSL, Cable, or Fiber). The results across the board, from metro to rural, are fairly similar; but the percentage in rural counties is slightly lower.
+ 
+
+```{r}
+Wirelessvcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Wireless), y=Percent_Wireless, fill=Percent_Rural_Pop)) +
+  geom_col(alpha=.8, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Wireless vs. County Name", x="County Name (NY)", y="% of Households With Wireless")
+
+ggplotly(Wirelessvcounty)
+```
+
+
+>This visualization shows the percentage of households per county in New York state that have access to Wireless services provided through the use of satellites. The results in both metro and rural counties are fairly homogeneous.
 
 ## Contributions:
 -Kyaw Za looked up data sources, did the API calls, and did the data wrangling.
