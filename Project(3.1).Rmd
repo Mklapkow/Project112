@@ -1,0 +1,264 @@
+---
+title: "Final Project 112"
+output: html_document
+authors: "Kyaw, Myles, Kat, and Danny"
+---
+```{r, install=TRUE}
+library(readr)
+library(gplots)
+library(ggplot2)
+library(tidyverse)
+library(lubridate)
+library(plotly)
+library(urltools)
+library(knitr)
+library(ggmap)
+library(choroplethr)
+library(choroplethrMaps)
+library(RColorBrewer)
+library(viridis)
+library(urltools)
+library(jsonlite)
+library(tidycensus)
+census_api_key("c08a79973dcaf2735a03640e063df308cf920465")
+```
+```{r}
+Demographics <- read.csv("Demographics - nbm-rank-12-14-2018-1-03-am.csv")
+```
+
+```{r}
+Demographics <- Demographics %>% 
+  mutate(Geography=gsub(" NY", "", Demographics$Geography))
+```
+
+```{r}
+#House Wireless Units by County in New York
+NY_wifi <- read.csv("https://data.ny.gov/api/views/sjc6-ftj4/rows.csv?accessType=DOWNLOAD")
+```
+
+
+```{r}
+CountyNY_wifi <- NY_wifi %>% filter(Municipality.Type == "County")
+```
+
+##Housing Units with Wireline  
+```{r, cache=TRUE}
+library(maps)
+data(county.fips)
+fips_codes<-separate(county.fips,polyname,c("state","county"),sep=",")
+ny_fips_codes<-fips_codes%>%
+  filter(state=="new york")
+CountyNY_wifi<-CountyNY_wifi%>%
+  mutate(county=tolower(County))%>%
+  mutate(county=gsub("st. lawrence","st lawrence",county))%>%
+  left_join(ny_fips_codes,by=c("county"="county"))
+CountyNY_wifi <- CountyNY_wifi %>% mutate(region=fips, value=X..Hse.Units.Wireline.1)
+```
+
+```{r}
+CountyNY_wifi6 <- CountyNY_wifi %>% mutate(region=fips, value=X..Wireline.Providers)
+county_choropleth(CountyNY_wifi6, state_zoom="new york") + scale_fill_manual(values = rev(brewer.pal(6,"RdBu"))) + ggtitle("Number of Wireline Providers in each County in the State of New York")
+```
+
+>This map shows the number of wireline providers in each County in the State of New York. There does not seem to be much of a pattern between urban or rural counties in this, nor average household income.
+##House Units with Cable
+
+```{r}
+CountyNY_wifi2 <- CountyNY_wifi %>% mutate(region=fips, value=X..Cable.Providers)
+```
+
+```{r}
+county_choropleth(CountyNY_wifi2, state_zoom="new york") + scale_fill_manual(values = rev(brewer.pal(4,"RdBu"))) + ggtitle("Number of Cable Providers by County")
+```
+
+>In this map, we can see that there is some pattern between the number of cable providers by county and the county's proximity to urban areas. However, the counties with 4 cable providers are surprising as they do not relate to average household income, but the three counties marked in red do have relatively low populations. Because there are only a maximum of 4 different calbe providers, it is possible that this is a generally less popular/used internet service.
+
+##House Units with DSL
+
+```{r}
+CountyNY_wifi3 <- CountyNY_wifi %>% mutate(region=fips, value=X..of.DSL.Providers)
+```
+
+```{r}
+county_choropleth(CountyNY_wifi3, state_zoom="new york") + scale_fill_manual(values = rev(brewer.pal(5,"RdBu"))) + ggtitle("Number of DSL Broadband Providers by County")
+```
+
+>In this map the number of DSL providers by county is displayed. In New York City and the boroughs, it is interesting to see that there is only between 1 to 3 DSL broadband providers, whereas less densley populated areas of New York have many more.
+##House Units with Fiber
+
+```{r}
+CountyNY_wifi4 <- CountyNY_wifi %>% mutate(region=fips, value=X..Fiber.Providers)
+```
+
+```{r}
+county_choropleth(CountyNY_wifi4, state_zoom="new york") + scale_fill_manual(values = rev(brewer.pal(6,"RdBu"))) + ggtitle("Number of Fiber Broadband Providers by County")
+```
+
+>This map describes the number of fiber broadband providers by county. It appears, from this map, that the counties in New York with lower household incomes have less providers of this kind of internet.
+
+##Housing Units with Wireless
+
+```{r}
+CountyNY_wifi5 <- CountyNY_wifi %>% mutate(region=fips, value=X..Wireless.Providers)
+```
+
+```{r}
+county_choropleth(CountyNY_wifi5, state_zoom="new york") + scale_fill_manual(values = rev(brewer.pal(5,"RdBu"))) + ggtitle("Number of Wireless Broadband Providers by County")
+```
+
+>According to this mpa, most counties in New York State have between 6 and 7 wireless broadband providers.
+### New York State Population by Counties
+Data Source: https://catalog.data.gov/dataset/annual-population-estimates-for-new-york-state-and-counties-beginning-1970
+
+```{r}
+NY_pop <- read.csv("https://data.ny.gov/api/views/krt9-ym2k/rows.csv?accessType=DOWNLOAD")
+```
+
+```{r}
+NY_pop_2010 <- NY_pop %>% filter(Program.Type == "Census Base Population") %>% filter(Year == 2010)  %>% filter(FIPS.Code != 36000) %>% mutate(region = FIPS.Code) %>% mutate(value = Population)
+```
+
+```{r}
+county_choropleth(NY_pop_2010, state_zoom="new york") + scale_fill_manual(values = rev(brewer.pal(7,"RdBu"))) + ggtitle("2010 Census Population By County") 
+```
+
+>This shows the 2010 Census population by county in the State of New York.
+### New York State Household Income by Counties
+
+```{r}
+NY_income_2010 <- get_acs(geography = "county", 
+              variables = c(medincome = "B19013_001"), 
+              state = "NY") %>% mutate(region = as.numeric(GEOID)) %>% mutate(value = estimate) 
+NY_income_2010 <- NY_income_2010 %>% mutate(NAME=gsub(" County, New York", "", NY_income_2010$NAME))
+```
+
+```{r}
+county_choropleth(NY_income_2010, state_zoom="new york") + scale_fill_manual(values = rev(brewer.pal(7,"RdBu"))) + ggtitle("2010 Median Household Income By County")
+```
+
+>This map shows the median household income by county from the 2010 Cencus data.
+
+```{r}
+fips_codes_ny <- fips_codes %>% filter(state == "new york")
+ny_metro <- tibble(county=c("bronx", "kings", "new york", "queens", "richmond", "nassau", "putnam", "rockland", "suffolk", "westchester"), type=c("metro","metro","metro","metro","metro","metro","metro","metro","metro","metro"))
+ny_county_type <- full_join(fips_codes_ny, ny_metro, by = "county")
+ny_county_type[is.na(ny_county_type)] <- "rural"
+```  
+
+```{r}
+ny_county_type<-ny_county_type%>% mutate(region=fips, value=type)
+county_choropleth(ny_county_type, state_zoom="new york") + scale_fill_manual(values = rev(brewer.pal(3,"RdBu"))) + ggtitle("Urban vs. Rural New York Metro Counties")
+```
+
+
+
+
+>This map distinguishes between counties in New York that are a part of the New York City metro area and those that are defined as rural.
+
+```{r}
+NY_census_rural<- read_csv("county_rural.csv")
+NY_census_rural<- NY_census_rural %>%
+  filter(State == "NY") %>%
+  select(-Note)
+NewNYCounty<- CountyNY_wifi %>% 
+  left_join(NY_census_rural, by=c("X2010.Muni.Population"="2010 Census Total Population"))
+Total_NY_Wifi<- NewNYCounty %>%
+  left_join(NY_income_2010, by=c("County"="NAME"))
+Total_NY_Wifi<- Total_NY_Wifi %>%
+  left_join(Demographics, by=c("County"="Geography"))
+```
+
+```{r}
+Trimmed_NY_Wifi <- Total_NY_Wifi %>%
+  select(-GNIS.ID, -Municipality.Name, -Municipality.Type, -county, -GEOID, -`2015 Geography Name`, -state, -`2015 GEOID`, -variable) 
+colnames(Trimmed_NY_Wifi)[1] <- "Total_Population"
+colnames(Trimmed_NY_Wifi)[2] <- "Total_Housing_Units"
+colnames(Trimmed_NY_Wifi)[3] <- "Municipal_Area"
+colnames(Trimmed_NY_Wifi)[5] <- "REDC_Region"
+colnames(Trimmed_NY_Wifi)[6] <- "Cable_Providers"
+colnames(Trimmed_NY_Wifi)[7] <- "Units_Cable"
+colnames(Trimmed_NY_Wifi)[8] <- "Percent_Cable"
+colnames(Trimmed_NY_Wifi)[9] <- "DSL_Providers"
+colnames(Trimmed_NY_Wifi)[10] <- "Units_DSL"
+colnames(Trimmed_NY_Wifi)[11] <- "Percent_DSL"
+colnames(Trimmed_NY_Wifi)[12] <- "Fiber_Providers"
+colnames(Trimmed_NY_Wifi)[13] <- "Units_Fiber"
+colnames(Trimmed_NY_Wifi)[14] <- "Percent_Fiber"
+colnames(Trimmed_NY_Wifi)[15] <- "Wireline_Providers"
+colnames(Trimmed_NY_Wifi)[16] <- "Units_Wireline"
+colnames(Trimmed_NY_Wifi)[17] <- "Percent_Wireline"
+colnames(Trimmed_NY_Wifi)[18] <- "Wireless_Providers"
+colnames(Trimmed_NY_Wifi)[19] <- "Units_Wireless"
+colnames(Trimmed_NY_Wifi)[20] <- "Percent_Wireless"
+colnames(Trimmed_NY_Wifi)[21] <- "Sat_Providers"
+colnames(Trimmed_NY_Wifi)[26] <- "Urban_Pop"
+colnames(Trimmed_NY_Wifi)[27] <- "Rural_Pop"
+colnames(Trimmed_NY_Wifi)[28] <- "Percent_Rural_Pop"
+colnames(Trimmed_NY_Wifi)[33] <- "Percent_White"
+colnames(Trimmed_NY_Wifi)[34] <- "Percent_Black"
+colnames(Trimmed_NY_Wifi)[35] <- "Percent_Hispanic"
+colnames(Trimmed_NY_Wifi)[36] <- "Percent_Asian"
+colnames(Trimmed_NY_Wifi)[37] <- "Percent_Native_American"
+Total_NY_Wifi <- Trimmed_NY_Wifi
+```
+
+```{r}
+cablevcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Cable), y=Percent_Cable, fill=Percent_Rural_Pop)) +
+  geom_col(alpha=1, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Cable vs. County Name", x="County Name (NY)", y="% of Households With Cable")
+
+ggplotly(cablevcounty)
+```
+
+
+>This visualization displays the percentage of households with cable per county in New York state. Metro counties generally have a higher percentage of households with cable (as illustrated by the left end of the x-axis) when compared to rural counties (shown on the right side of the x-axis)
+
+```{r}
+DSLvcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_DSL), y=Percent_DSL, fill=Percent_Rural_Pop)) +
+  geom_col(alpha=.8, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With DSL vs. County Name", x="County Name (NY)", y="% of Households With DSL")
+ggplotly(DSLvcounty)
+```
+
+>This visualization illustrates the percentage of households per county that have DSL in New York state. This chart shows the same trend as the previous, the metro county households have a tendency to have more access to DSL than households in rural counties.
+
+```{r}
+Fibervcounty<- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Fiber), y=Percent_Fiber, fill=Percent_Rural_Pop)) +
+  geom_col(alpha=1, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Fiber vs. County Name", x="County Name (NY)", y="% of Households With Fiber")
+ggplotly(Fibervcounty)
+```
+
+>This visualization depicts the percentage of households in New York state counties with access to fiber, a super speed internet service offered by providers in select locations. Fiber is limited almost exclusively to metro counties in New York state.
+
+```{r}
+Wirelinevcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Wireline), y=Percent_Wireline, fill=Percent_Rural_Pop)) +
+  geom_col(alpha=1, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Wireline vs. County Name", x="County Name (NY)", y="% of Households With Wireline")
+ggplotly(Wirelinevcounty)
+```
+
+>This visualization shows the percentage of households per county in New York state that have Wireline access (DSL, Cable, or Fiber). The results across the board, from metro to rural, are fairly similar; but the percentage in rural counties is slightly lower.
+ 
+
+```{r}
+Wirelessvcounty <- ggplot(Total_NY_Wifi, aes(x = reorder(County, -Percent_Wireless), y=Percent_Wireless, fill=Percent_Rural_Pop)) +
+  geom_col(alpha=.8, position = position_stack()) + theme(axis.text.x = element_text(angle = 65, hjust = 1)) + labs(title= "% of Households With Wireless vs. County Name", x="County Name (NY)", y="% of Households With Wireless")
+ggplotly(Wirelessvcounty)
+```
+
+```{r}
+ggplot(Total_NY_Wifi, aes(x=Percent_Rural_Pop, y=Percent_Cable)) + 
+  geom_point(aes(size=estimate, color=Percent_White))
+```
+
+
+```{r}
+CNY<-as.data.frame(Total_NY_Wifi) # convert from tibble to data frame
+row.names(CNY)<-CNY$County
+CNY<-CNY[,2:8]
+CNY_mat <- data.matrix(CNY)
+
+par(mar = rep(2, 4))
+
+heatmap.2(CNY_mat, Rowv=NA, Colv=NA, scale="column",
+          keysize=.7,density.info="none",
+          col=heat.colors(256))
+```
+
